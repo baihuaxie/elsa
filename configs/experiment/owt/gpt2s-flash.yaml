@@ -1,0 +1,8 @@
+# @package _global_
+
+# GPT-2-small with Flash Attention
+
+defaults:
+  - /experiment/owt/base.yaml
+  - override /model: gpt2
+  - override /model/gpt2model: gpt2-small

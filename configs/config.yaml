@@ -1,0 +1,17 @@
+defaults:
+  - _self_
+  - trainer: default
+  - task: sequence-model
+  - mode: default
+
+  # enable color logging
+  - override hydra/hydra_logging: colorlog
+  - override hydra/job_logging: colorlog
+
+print_config: True
+
+# path to work directory
+work_dir: ${hydra:runtime.cwd}
+
+# path to dataset directory
+data_dir: ${work_dir}/data/
