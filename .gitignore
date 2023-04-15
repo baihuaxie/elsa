@@ -16,3 +16,4 @@ dev.env
 *.txt
 **/logs/**
 **/bk/**
+**/dev/**

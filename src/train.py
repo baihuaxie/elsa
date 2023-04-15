@@ -4,6 +4,7 @@ and from: https://github.com/ashleve/lightning-hydra-template
 """
 from typing import Optional
 import pyrootutils
+
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import (
@@ -12,7 +13,7 @@ from pytorch_lightning import (
     seed_everything,
 )
 
-# 
+# this adds project root directory to PYTHONPATH
 pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 from src.utils import utils
