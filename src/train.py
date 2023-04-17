@@ -41,5 +41,8 @@ def train(config: DictConfig) -> Optional[float]:
 
     # init Lightning model and datamodule for a task
     # the second `cfg=config` argument is used by the model class defined by config.task._target_
-    model: LightningModule = hydra.utils.instantiate(config.task, cfg=config)
-    datamodule: LightningDataModule = model.datamodule
+    #model: LightningModule = hydra.utils.instantiate(config.task, cfg=config)
+    #datamodule: LightningDataModule = model.datamodule
+
+    # init lightning callbacks
+

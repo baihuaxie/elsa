@@ -8,8 +8,12 @@ import numpy as np
 from pytorch_lightning import LightningDataModule
 import tiktoken
 
-from src.datamodules.datasets.utils import get_dataset_provider
+import torch
+from torch.utils.data.dataloader import DataLoader, Dataset
+from torch.utils.data.sampler import RandomSampler
+
 from src.datamodules.datasets.detokenize import DATASET_DETOKENIZE_REGISTRY
+from src.datamodules.datasets.lm_dataset import LMDataset
 from src.utils.utils import get_logger
 
 
@@ -24,24 +28,29 @@ class LMDataModule(LightningDataModule):
         tokenizer_name,
         dataset_config = None,
         cache_dir = None,
-        create_val_split = False,
+        max_seq_len = 512,
+        batch_size = 8,
         val_ratio = 0.005,
         val_split_seed = 1000,
         add_eot = True,
+        shuffle = True,
         detokenize_first = False,
         num_proc = 1,
         save_to_disk = True,
         remove_bin_files = False,
+        has_test_split = False,
     ):
         super().__init__()
         self.dataset_name = dataset_name
         self.tokenizer_name = tokenizer_name
         self.dataset_config = dataset_config
         self.cache_dir = cache_dir
-        self.create_val_split = create_val_split
+        self.max_seq_len = max_seq_len
+        self.batch_size = batch_size
         self.val_ratio = val_ratio
         self.val_split_seed = val_split_seed
         self.add_eot = add_eot
+        self.shuffle = shuffle
         self.detokenize_first = detokenize_first
         self.num_proc = num_proc
         self.save_to_disk = save_to_disk
@@ -55,10 +64,10 @@ class LMDataModule(LightningDataModule):
         """An identifier for a specific version of tokenized dataset.
         """
         return (
-            f"tokenizer_name-{self.tokenizer_name}-val_ratio-{self.val_ratio}-"
-            f"val_split_seed-{self.val_split_seed}-add_eot-{self.add_eot}-"
+            f"tokenizer_name-{self.tokenizer_name}-add_eot-{self.add_eot}-"
             f"detokenize-{self.detokenize_first}"
         )
+
 
     def prepare_data(self):
         """Download / Load raw dataset from disk then tokenize.
@@ -68,10 +77,24 @@ class LMDataModule(LightningDataModule):
             load_dataset(self.dataset_name, self.dataset_config)
         # else load dataset from cache
         else:
-            self.process_dataset(self.dataset_name)
+            self.process_dataset()
 
 
-    def process_dataset(self, dataset_name):
+    def setup(self, stage="fit"):
+        concat_ids, self.tokenizer = self.process_dataset()
+        try:
+            self.vocab_size = len(self.tokenizer)
+        except TypeError:
+            logger.info("Saved tokenizer not found. Assuming tiktoken tokenizer were used.")
+            self.vocab_size = self.tokenizer.n_vocab
+        # create splits
+        self.dataset_train, self.dataset_val, self.dataset_test = [
+            LMDataset(concat_ids[split], seq_len=self.max_seq_len, drop_last=True)
+            for split in ["train", "validation", "test"]
+        ]
+
+
+    def process_dataset(self):
         cache_dir = (
             None if self.cache_dir is None else self.cache_dir / self._cache_dir_identifier
         )
@@ -80,31 +103,25 @@ class LMDataModule(LightningDataModule):
                 return self._load_from_cache_dir(cache_dir)
 
         # load raw dataset
-        try:
-            # try to load raw dataset from disk if already downloaded
-            # and moved to a custom disk location (might be different than default
-            # HuggingFace cache location)
-            raw_datasets = get_dataset_provider(dataset_name)()
-        except ValueError:
-            # else load it from HuggingFace Hub or its cache location
-            raw_datasets = load_dataset(dataset_name, self.dataset_config)
+        raw_datasets = load_dataset(self.dataset_name, self.dataset_config)
 
         # create validation split from training split if necessary
-        if self.create_val_split:
-            assert ("valid", "val", "validation") not in raw_datasets.keys()
+        if "validation" not in raw_datasets:
+            assert "train" in raw_datasets, "Dataset must contain train split!"
             raw_datasets = raw_datasets["train"].train_test_split(
                 test_size=self.val_ratio, seed=self.val_split_seed,
                 shuffle=True,   # otherwise Test split will always be at the end
             )
-            raw_datasets["valid"] = raw_datasets["test"]
+            # TODO: test split == val split? what's the point?
+            raw_datasets["validation"] = raw_datasets["test"]
 
         # TODO: detokenize wikitext-2/103 datasets first
         # wikitext datasets come in already white-space tokenized
         # Flash-attention authors suggested to detokenize first for better
         # few-shot performance because the format will be closer to OpenWebText
         if self.detokenize_first:
-            if dataset_name in DATASET_DETOKENIZE_REGISTRY:
-                detokenize_fn = DATASET_DETOKENIZE_REGISTRY[dataset_name]
+            if self.dataset_name in DATASET_DETOKENIZE_REGISTRY:
+                detokenize_fn = DATASET_DETOKENIZE_REGISTRY[self.dataset_name]
                 raw_datasets = raw_datasets.map(
                     lambda example: {"text": detokenize_fn(example["text"])},
                     batched=False,
@@ -251,6 +268,7 @@ class LMDataModule(LightningDataModule):
             np.save(cache_dir / f"{split}.npy", ids)
 
         # TODO: save tiktoken tokenizer gives TypeError: cannot pickle 'builtins.CoreBPE' object
+        # TODO: this exception handling seem to fail with `num_proc > 1`?
         try:
             with open(cache_dir / "tokenizer.pkl", "wb") as f:
                 pickle.dump(tokenizer, f)
@@ -268,7 +286,7 @@ class LMDataModule(LightningDataModule):
         logger.info(f"Load from cache at {str(cache_dir)}...")
         try:
             concat_ids = {split: np.load(cache_dir / f"{split}.npy", mmap_mode="r")
-                        for split in ["train", "valid", "test"]}
+                        for split in ["train", "validation", "test"]}
         except FileNotFoundError:
             logger.info("File not found, skipping split...")
 
@@ -285,4 +303,46 @@ class LMDataModule(LightningDataModule):
             tokenizer = tiktoken.get_encoding(self.tokenizer_name)
 
         return concat_ids, tokenizer
+
+    def train_dataloader(self):
+        if not self.shuffle:
+            # TODO: random sampler for DDP?
+            generator = torch.Generator()
+            generator.manual_seed(
+                int(torch.empty((), dtype=torch.int64).random_().item())
+            )
+            sampler = RandomSampler(self.dataset_train, generator=generator)
+        else:
+            sampler = None
+        return self._dataloader(
+            self.dataset_train,
+            batch_size=self.batch_size,
+            shuffle=self.shuffle,
+            sampler=sampler,
+        )
+
+    def val_dataloader(self):
+        return self._dataloader(self.dataset_val, batch_size=self.batch_size)
+
+    def test_dataloader(self):
+        return self._dataloader(self.dataset_test, batch_size=self.batch_size)
+
+    def _dataloader(
+            self,
+            dataset: Dataset,
+            batch_size: int,
+            shuffle: bool = False,
+            sampler=None
+        ) -> DataLoader:
+        # note: use Pytorch default `collate_fn` is ok since I defined LMDataset
+        # to return batches of sequences in equal length (== self.max_seq_len)
+        # so no padding or truncation were done during tokenization
+        return DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            sampler=sampler,
+            num_workers=max(self.num_proc, 1),
+            pin_memory=True,
+        )
 

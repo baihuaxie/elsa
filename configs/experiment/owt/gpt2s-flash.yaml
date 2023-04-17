@@ -4,5 +4,3 @@
 
 defaults:
   - /experiment/owt/base.yaml
-  - override /model: gpt2
-  - override /model/gpt2model: gpt2-small
