@@ -30,29 +30,32 @@ class LMDataModule(LightningDataModule):
         cache_dir = None,
         max_seq_len = 512,
         batch_size = 8,
+        batch_size_eval = None,
         val_ratio = 0.005,
         val_split_seed = 1000,
         add_eot = True,
         shuffle = True,
         detokenize_first = False,
         num_proc = 1,
+        pin_memory = True,
         save_to_disk = True,
         remove_bin_files = False,
-        has_test_split = False,
     ):
         super().__init__()
         self.dataset_name = dataset_name
         self.tokenizer_name = tokenizer_name
         self.dataset_config = dataset_config
-        self.cache_dir = cache_dir
+        self.cache_dir = None if cache_dir is None else Path(cache_dir)
         self.max_seq_len = max_seq_len
         self.batch_size = batch_size
+        self.batch_size_eval = batch_size_eval if batch_size_eval is not None else batch_size
         self.val_ratio = val_ratio
         self.val_split_seed = val_split_seed
         self.add_eot = add_eot
         self.shuffle = shuffle
         self.detokenize_first = detokenize_first
         self.num_proc = num_proc
+        self.pin_memory = pin_memory
         self.save_to_disk = save_to_disk
         self.remove_bin_files =remove_bin_files
 
@@ -72,6 +75,7 @@ class LMDataModule(LightningDataModule):
     def prepare_data(self):
         """Download / Load raw dataset from disk then tokenize.
         """
+        logger.info("Preparing dataset...")
         # if `cache_dir` is not provided, download dataset from HuggingFace Hub.
         if self.cache_dir is None:
             load_dataset(self.dataset_name, self.dataset_config)
@@ -81,7 +85,9 @@ class LMDataModule(LightningDataModule):
 
 
     def setup(self, stage="fit"):
+        logger.info("Set up dataset...")
         concat_ids, self.tokenizer = self.process_dataset()
+        # print([len(concat_ids[split]) for split in ["train", "validation", "test"]])
         try:
             self.vocab_size = len(self.tokenizer)
         except TypeError:
@@ -298,7 +304,7 @@ class LMDataModule(LightningDataModule):
         except FileNotFoundError:
             logger.info(
                 f"Tokenizer is not found in cache. Loading OpenAI {self.tokenizer_name} tokenizer"
-                "by default..."
+                " by default..."
             )
             tokenizer = tiktoken.get_encoding(self.tokenizer_name)
 
@@ -322,10 +328,10 @@ class LMDataModule(LightningDataModule):
         )
 
     def val_dataloader(self):
-        return self._dataloader(self.dataset_val, batch_size=self.batch_size)
+        return self._dataloader(self.dataset_val, batch_size=self.batch_size_eval)
 
     def test_dataloader(self):
-        return self._dataloader(self.dataset_test, batch_size=self.batch_size)
+        return self._dataloader(self.dataset_test, batch_size=self.batch_size_eval)
 
     def _dataloader(
             self,
@@ -343,6 +349,6 @@ class LMDataModule(LightningDataModule):
             shuffle=shuffle,
             sampler=sampler,
             num_workers=max(self.num_proc, 1),
-            pin_memory=True,
+            pin_memory=self.pin_memory,
         )
 

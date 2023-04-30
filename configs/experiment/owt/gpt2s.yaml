@@ -1,0 +1,15 @@
+# @package _global_
+
+# GPT-2-small
+
+defaults:
+  - /experiment/owt/base.yaml
+  - override /model: gpt2
+  - override /model/gpt2model: gpt2-small
+
+datamodule:
+  batch_size: ${eval:"16 if ${trainer.precision} == 16 else 4"}
+
+model_name: gpt2small
+
+tags: []

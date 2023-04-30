@@ -1,6 +1,0 @@
-# @package _global_
-
-# GPT-2-small with Flash Attention
-
-defaults:
-  - /experiment/owt/base.yaml

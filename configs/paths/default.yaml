@@ -1,0 +1,21 @@
+# project root directory
+root_dir: ${oc.env:PROJECT_ROOT}
+
+# path to work directory
+work_dir: ${hydra:runtime.cwd}
+
+# path to dataset directory
+data_dir: ${paths.root_dir}/data
+
+# path to log directory
+log_dir: ${paths.root_dir}/logs
+
+# path to wandb save directory
+wandb_dir: ${paths.root_dir}/wandb
+
+# path to checkpoints
+checkpoint_dir: ${paths.root_dir}/checkpoints
+
+# output directory
+# dynamically set by hydra
+output_dir: ${hydra:runtime.output_dir}

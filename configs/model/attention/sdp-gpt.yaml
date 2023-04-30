@@ -1,0 +1,9 @@
+_target_: src.models.attention.sdp.ScaledDotProductAttentionForGPT
+
+config:
+  n_embed: ${model.config.n_embed}
+  n_head: ${model.config.n_head}
+  block_size: ${datamodule.max_seq_len}
+  hidden_dropout_prob: ${model.config.hidden_dropout_prob}
+  flash: True
+  bias: ${model.config.bias}

@@ -1,0 +1,15 @@
+_target_: src.datamodules.language_modeling.LMDataModule
+dataset_name: wikitext2
+tokenizer_name: r50k_base   # gpt2 tokenizer
+dataset_config: null
+cache_dir: ${oc.env:DATA_DIR, ${paths.data_dir}}/nlp/wikitext2/cache
+max_seq_len: 1024
+val_ratio: 0.0005       # not used
+val_split_seed: 2357    # not used
+add_eot: False
+batch_size: 8   # per GPU
+batch_size_eval: ${eval:${.batch_size} * 2}   # no gradients so can use larger?
+num_proc: 4  # for tokenization
+shuffle: True   # no sampler
+pin_memory: True
+

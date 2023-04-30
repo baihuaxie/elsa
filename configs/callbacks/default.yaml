@@ -1,0 +1,11 @@
+rich_model_summary:
+  _target_: pytorch_lightning.callbacks.RichModelSummary
+
+
+# model checkpoint to save every N training steps for continual training
+model_checkpoint:
+  _target_: pytorch_lightning.callbacks.ModelCheckpoint
+  dirpath: ${paths.checkpoint_dir}/${datamodule.dataset_name}/${model_name}/${eval:"'-'.join([t for t in ${tags}])"}/${now:%Y-%m-%d}
+  filename: step_{step:03d}
+  every_n_train_steps: 10000
+  save_last: True # is this needed??

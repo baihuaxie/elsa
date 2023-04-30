@@ -1,11 +1,12 @@
-# Copied or adapted from:
+# Copied and adapted from:
 # https://github.com/HazyResearch/flash-attention/blob/main/training/src/utils/utils.py
 from typing import Sequence, Optional
-
+from pathlib import Path
 import logging
 import rich.tree
 import rich.syntax
 from omegaconf import DictConfig, OmegaConf
+from hydra.core.hydra_config import HydraConfig
 from pytorch_lightning.utilities import rank_zero_only
 
 
@@ -47,13 +48,14 @@ def extras(config: DictConfig) -> None:
 def print_config(
     config: DictConfig,
     fields: Optional[Sequence[str]] = (
+        "paths",
         "trainer",
         "model",
         "datamodule",
         "train",
         "eval",
         "callbacks",
-        "logger",
+        "loggers",
         "seed",
         "name"
     ),
@@ -83,7 +85,7 @@ def print_config(
 
     # print to log file
     # TODO: this doesn't seem to save the log file to output directory
-    with open("config_tree.txt", "w") as fp:
+    with open(Path(config.paths.output_dir, "config_tree.txt"), "w") as fp:
         rich.print(tree, file=fp)
 
 

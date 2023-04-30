@@ -1,6 +1,8 @@
 *.gz
 *.gz
 *.zip
+*.ckpt
+*.out
 jobs.json
 **/.vscode/*
 *.png
@@ -15,5 +17,7 @@ dev.env
 *.onnx
 *.txt
 **/logs/**
+**/wandb/**
 **/bk/**
 **/dev/**
+**/.hydra/**

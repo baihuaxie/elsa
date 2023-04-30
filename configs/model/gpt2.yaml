@@ -1,0 +1,15 @@
+defaults:
+  - _self_
+  - gpt2model: gpt2-small
+  - attention: sdp-gpt
+
+_target_: src.models.gpt.GPTLMHeadModel
+_recursive_: True
+
+config:
+  _target_: src.models.gpt.GPTConfig
+  bias: False
+  hidden_dropout_prob: 0.1
+
+
+

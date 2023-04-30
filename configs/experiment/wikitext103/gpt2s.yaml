@@ -1,0 +1,12 @@
+# @package _global_
+
+# GPT-2-small
+
+defaults:
+  - /experiment/owt/base.yaml
+  - override /datamodule: wikitext103
+  - override /model: gpt2
+  - override /model/gpt2model: gpt2-small
+
+datamodule:
+  batch_size: ${eval:"8 if ${trainer.precision} == 16-mixed else 4"}

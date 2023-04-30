@@ -1,6 +1,6 @@
 
 from typing import Callable
-
+import math
 import dotenv
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -12,6 +12,7 @@ dotenv.load_dotenv(override=True)
 # add additional resolvers
 # TODO: more resolvers?
 OmegaConf.register_new_resolver("eval", eval)
+OmegaConf.register_new_resolver("ceil", lambda x, y: math.ceil(x / y))
 
 # turn on TensorFloat32 cores for matmul and convolutions
 import torch.backends

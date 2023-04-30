@@ -1,0 +1,48 @@
+# @package _global_
+defaults:
+  - override /datamodule: openwebtext
+  - override /model: null
+  - override /optimizer: adamw
+  - override /scheduler: cosine-warmup
+  - override /callbacks: default
+  - override /metrics: [perplexity]
+  - override /loggers: [wandb]
+
+task:
+  _target_: src.tasks.seq.SequenceModel # TODO change to SequenceLMModel?
+
+seed: 1111
+
+datamodule:
+  batch_size: 4   # per GPU
+  batch_size_eval: ${.batch_size}
+  max_seq_len: 1024
+  # TODO: add ddp?
+
+trainer:
+  accelerator: gpu
+  devices: 2
+  num_nodes: 1
+  accumulate_grad_batches: ${ceil:${train.global_batch_size}, ${eval:${trainer.devices}*${trainer.num_nodes}*${datamodule.batch_size}}}
+  max_steps: 400000
+  val_check_interval: ${eval:${.accumulate_grad_batches}*1000}
+  gradient_clip_val: 1.0    # TODO: how to enable grad clipping in PL?
+  check_val_every_n_epoch: null # we don't care about epochs in LM training
+  precision: 16   # enables amp
+  strategy: ddp
+
+train:
+  gpu_mem: ${eval:"round(float(__import__('subprocess').check_output('nvidia-smi -i 0 --query-gpu=memory.total --format=csv,noheader,nounits', shell=True).strip().decode()) / 1000)"}
+  global_batch_size: 128
+  optimizer:
+    lr: 6e-4
+    weight_decay: 0.1
+  optimizer_params_grouping:
+    bias_weight_decay: False
+    normalization_weight_decay: False
+  scheduler:
+    num_warmup_steps: ${eval:0.01*${trainer.max_steps}}
+    num_training_steps: ${trainer.max_steps}
+
+eval:
+  log_on_step: True
