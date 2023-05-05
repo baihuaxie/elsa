@@ -2,10 +2,53 @@ rich_model_summary:
   _target_: pytorch_lightning.callbacks.RichModelSummary
 
 
-# model checkpoint to save every N training steps for continual training
-model_checkpoint:
+# save every N training steps for continual training
+model_checkpoint_last:
   _target_: pytorch_lightning.callbacks.ModelCheckpoint
   dirpath: ${paths.checkpoint_dir}/${datamodule.dataset_name}/${model_name}/${eval:"'-'.join([t for t in ${tags}])"}/${now:%Y-%m-%d}
-  filename: step_{step:03d}
-  every_n_train_steps: 10000
-  save_last: True # is this needed??
+  filename: "{step:03d}"
+  every_n_train_steps: ${trainer.max_steps} # save just one checkpoint after the last step
+  save_last: True # copy last saved checkpoint file to last.ckpt
+
+
+# save best.ckpt
+model_checkpoint_best:
+  _target_: pytorch_lightning.callbacks.ModelCheckpoint
+  dirpath: ${paths.checkpoint_dir}/${datamodule.dataset_name}/${model_name}/${eval:"'-'.join([t for t in ${tags}])"}/${now:%Y-%m-%d}
+  filename: "best"
+  auto_insert_metric_name: False
+  monitor: "val/loss"
+  mode: "min"
+  save_top_k: 1
+  every_n_train_steps: ${eval:${trainer.val_check_interval}/${trainer.accumulate_grad_batches}+1}    # unit: global steps
+  save_last: False
+
+# early stopping
+early_stopping:
+  _target_: pytorch_lightning.callbacks.EarlyStopping
+  monitor: "val/loss"
+  mode: "min"
+  patience: 10    # 10*trainer.val_check_interval non-improving steps before training ends
+  min_delta: 0
+
+params_count:
+  _target_: src.callbacks.params_count.ParamsCounter
+  log_total_params: True
+  log_trainable_params: True
+  log_non_trainable_params: True
+
+flops_count:
+  _target_: src.callbacks.flops_count.FlopsCounter
+  profilers: ["estimate", "deepspeed"]
+
+loss_scale_monitor:
+  _target_: src.callbacks.loss_scale_monitor.LossScaleMonitor
+
+norm_monitor:
+  _target_: src.callbacks.norm_monitor.NormMonitor
+
+speed_monitor:
+  _target_: src.callbacks.speed_monitor.SpeedMonitor
+  log_intra_step_time: True
+  log_inter_step_time: True
+  log_training_time: True

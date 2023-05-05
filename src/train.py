@@ -92,9 +92,6 @@ def train(config: DictConfig) -> Optional[float]:
         except (ValueError, FileNotFoundError):
             log.info("Resume failed, trainining from scratch...")
 
-    #from pytorch_lightning.loggers import WandbLogger
-    #wandb_logger = WandbLogger(project="elsa-dev", log_model=False, mode="online")
-
     # init Lightning Trainer
     log.info(f"Instantiating Trainer <{str(config.trainer._target_)}>")
     trainer: Trainer = hydra.utils.instantiate(

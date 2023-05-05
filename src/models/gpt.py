@@ -84,6 +84,7 @@ class GPTLMHeadModel(nn.Module):
     _keys_to_ignore_on_load_unexpected = ["attn.masked_bias"]
     def __init__(self, config, attention: nn.Module):
         super().__init__()
+        self.config = config
         self.transformer = nn.ModuleDict(dict(
             wte = nn.Embedding(config.vocab_size, config.n_embed),
             wpe = nn.Embedding(config.block_size, config.n_embed),

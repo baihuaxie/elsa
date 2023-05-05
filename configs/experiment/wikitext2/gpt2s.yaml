@@ -9,7 +9,8 @@ defaults:
   - override /model/gpt2model: gpt2-small
 
 datamodule:
-  batch_size: ${eval:"8 if ${trainer.precision} == 16 else 4"}
+  #batch_size: ${eval:"16 if ${trainer.precision}.startswith(16) else 8"}
+  batch_size: 16
 
 model_name: gpt2small
 
