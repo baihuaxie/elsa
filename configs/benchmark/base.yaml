@@ -1,0 +1,21 @@
+
+defaults:
+  - baselines:
+    - sdp
+  - methods:
+    - flash
+
+config:
+  batch_size: 16    # batch_size, n_embed, n_head follow FlashAttention
+  n_embed: 512
+  n_head: 8
+  seq_len: 1024
+  hidden_dropout_prob: 0.1
+  bias: False
+
+test_run: True
+run_baselines: False
+amp: True   # note: Pytorch Flash Attention kernel requires half precision.
+output_dir: ${oc.env:PROJECT_ROOT}/outputs/benchmark
+save_csv: False
+save_plot: False

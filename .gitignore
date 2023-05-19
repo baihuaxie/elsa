@@ -21,3 +21,4 @@ dev.env
 **/bk/**
 **/dev/**
 **/.hydra/**
+**/outputs/**

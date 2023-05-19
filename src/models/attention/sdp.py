@@ -182,14 +182,17 @@ class ScaledDotProductAttentionForGPT(nn.Module):
 
         # use FLASh attention
         if self.flash:
-            out = F.scaled_dot_product_attention(
-                q,
-                k,
-                v,
-                attn_mask=None,
-                dropout_p=self.dropout_prob,
-                is_causal=True,
-            )
+            with torch.backends.cuda.sdp_kernel(
+                enable_flash=True, enable_math=False, enable_mem_efficient=False
+            ):
+                out = F.scaled_dot_product_attention(
+                    q,
+                    k,
+                    v,
+                    attn_mask=None,
+                    dropout_p=self.dropout_prob,
+                    is_causal=True,
+                )
         # use slow attention
         else:
             attn_scores = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
