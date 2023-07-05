@@ -4,9 +4,10 @@
 
 defaults:
   - /experiment/owt/base.yaml
-  - override /datamodule: wikitext103
   - override /model: gpt2
-  - override /model/gpt2model: gpt2-small
+  - override /model/gpt2model: gpt2-medium
 
 datamodule:
-  batch_size: 16
+  batch_size: 8
+
+model_name: gpt2m

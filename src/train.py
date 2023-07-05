@@ -64,7 +64,8 @@ def train(config: DictConfig) -> Optional[float]:
     ckpt_cfg = {}
     if config.get("resume"):
         try:
-            checkpoint_dir = Path(str(config.callbacks.model_checkpoint.dirpath))
+            checkpoint_dir = Path(str(config.callbacks.model_checkpoint_last.dirpath))
+            print(checkpoint_dir)
             if checkpoint_dir.is_dir():
                 last_ckpt_path = checkpoint_dir / "last.ckpt"
                 best_ckpt_path = checkpoint_dir / "best.ckpt"

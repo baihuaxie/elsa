@@ -1,0 +1,6 @@
+# @package _global_
+model:
+  config:
+    n_embed: 1024
+    n_layer: 24
+    n_head: 16

@@ -3,8 +3,8 @@
 wandb:
   _target_: pytorch_lightning.loggers.wandb.WandbLogger
   project: elsa
-  name: ${datamodule.dataset_name}-${model_name}-${eval:"'-'.join([t for t in ${tags}])"}
-  save_dir: ${paths.wandb_dir}
   id: ${oc.select:name}
+  name: ${datamodule.dataset_name}-${model_name}-${loggers.wandb.id}
+  save_dir: ${paths.wandb_dir}
   mode: online
   log_model: False

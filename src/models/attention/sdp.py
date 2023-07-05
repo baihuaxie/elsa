@@ -173,10 +173,10 @@ class ScaledDotProductAttentionForGPT(nn.Module):
     def forward(self, x):
         # TODO: add a padding `attention_mask`? is it not needed for pretraining? for inference?
         b, t, d = x.shape
-        q, k, v = self.c_attn(x).split(self.n_embed, dim=-1)
+        q, k, v = self.c_attn(x).split(self.n_embed, dim=-1) # q, k, v shape = (b, t, d)
 
         # b, nh, t, hs -> hs x nh = d
-        q = q.view(b, t, self.n_head, -1).transpose(1, 2)
+        q = q.view(b, t, self.n_head, -1).transpose(1, 2)   # q shape = (b, nh, t, hs)
         k = k.view(b, t, self.n_head, -1).transpose(1, 2)
         v = v.view(b, t, self.n_head, -1).transpose(1, 2)
 
@@ -195,14 +195,15 @@ class ScaledDotProductAttentionForGPT(nn.Module):
                 )
         # use slow attention
         else:
+            # qk shape = (b, nh, t, t)
             attn_scores = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
             attn_scores = attn_scores.masked_fill(self.bias[:, :, :t, :t] == 0, float("-inf"))
             attn_scores = nn.functional.softmax(attn_scores, dim=-1)
             attn_scores = self.attn_dropout(attn_scores)
+
             out = attn_scores @ v   # b, nh, t, hs
 
-        out = out.transpose(1, 2).contiguous().view(b, t, d)
+        out = out.transpose(1, 2).contiguous().view(b, t, d)    # out shape = (b, t, d)
         out = self.resid_dropout(self.c_proj(out))
 
-        return out
-
+        return out  # out shape = (b, t, d)

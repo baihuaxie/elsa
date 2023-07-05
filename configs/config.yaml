@@ -21,9 +21,5 @@ defaults:
 print_config: True
 #override hydra/job_logging/handlers/file/filename: ${hydra:runtime.output_dir}/${hydra.job.name}.log
 
-# tags of experiment run
-# used as identifiers to checkpoints
-tags: []
-
 # resume from checkpoint
 resume: False

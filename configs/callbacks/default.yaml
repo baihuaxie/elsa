@@ -4,8 +4,8 @@ rich_model_summary:
 
 # save every N training steps for continual training
 model_checkpoint_last:
-  _target_: pytorch_lightning.callbacks.ModelCheckpoint
-  dirpath: ${paths.checkpoint_dir}/${datamodule.dataset_name}/${model_name}/${eval:"'-'.join([t for t in ${tags}])"}/${now:%Y-%m-%d}
+  _target_: src.callbacks.model_checkpoint.ModelCheckpointMine
+  dirpath: ${paths.checkpoint_dir}/${datamodule.dataset_name}/${model_name}/${loggers.wandb.id}
   filename: "{step:03d}"
   every_n_train_steps: ${trainer.max_steps} # save just one checkpoint after the last step
   save_last: True # copy last saved checkpoint file to last.ckpt
@@ -14,7 +14,7 @@ model_checkpoint_last:
 # save best.ckpt
 model_checkpoint_best:
   _target_: pytorch_lightning.callbacks.ModelCheckpoint
-  dirpath: ${paths.checkpoint_dir}/${datamodule.dataset_name}/${model_name}/${eval:"'-'.join([t for t in ${tags}])"}/${now:%Y-%m-%d}
+  dirpath: ${paths.checkpoint_dir}/${datamodule.dataset_name}/${model_name}/${loggers.wandb.id}
   filename: "best"
   auto_insert_metric_name: False
   monitor: "val/loss"
@@ -39,7 +39,7 @@ params_count:
 
 flops_count:
   _target_: src.callbacks.flops_count.FlopsCounter
-  profilers: ["estimate", "deepspeed"]
+  profilers: ["estimate"]
 
 loss_scale_monitor:
   _target_: src.callbacks.loss_scale_monitor.LossScaleMonitor
