@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#export LD_LIBRARY_PATH=/home/baihuaxie/anaconda3/envs/elsa/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/home/baihuaxie/anaconda3/envs/elsa/lib/:$LD_LIBRARY_PATH
 
 # specify the experiments
 EXPERIMENT="owt/gpt2m"
@@ -9,7 +9,7 @@ EXPERIMENT="owt/gpt2m"
 PROJECT_NAME="elsa-new"
 
 # specify run id
-RUN_ID="orion-alpha"
+RUN_ID="orion-beta"
 
 # specify the path to the log directory
 BASE_DIR="./checkpoints"
