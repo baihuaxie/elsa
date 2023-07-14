@@ -22,3 +22,6 @@ dev.env
 **/dev/**
 **/.hydra/**
 **/outputs/**
+data
+checkpoints
+.env
