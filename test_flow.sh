@@ -1,10 +1,12 @@
 #!/bin/bash
 
+export LD_LIBRARY_PATH=/home/baihuaxie/anaconda3/envs/elsa/lib/:$LD_LIBRARY_PATH
+
 # specify the name of the python script to run
 SCRIPT_NAME="run.py"
 
 # specify the experiments
-EXPERIMENT="owt/gpt2s"
+EXPERIMENT="wikitext2/gpt2s"
 
 # specify project name
 PROJECT_NAME="elsa-develop"

@@ -1,15 +1,37 @@
 import os
 from pathlib import Path
 current_dir = Path(__file__).parent.absolute()
-
-import math
 import dotenv
 dotenv.load_dotenv(override=True)
+
+from tqdm import tqdm
+
+import math
 
 import torch
 
 # TODO: use project.toml for local build?
 from src.datamodules.language_modeling import LMDataModule
+
+
+def check_dataloader(dataloader, batch_size, max_seq_len, vocab_size=50257):
+    """Several dataloader sanity checks.
+    """
+    # check batch shapes and dtype
+    x, y = next(iter(dataloader)).values()
+    assert x.dim() == 2     # (batch, seq_len,)
+    assert x.shape == (batch_size, max_seq_len)
+    assert x.dtype == torch.long
+
+    for batch in tqdm(dataloader, desc="Checking token ids"):
+        # check no token ids exceed vocab_size
+        # NOTE: to avoid CUDA device side assertion errors regarding embedding layer
+        assert not torch.any(batch["input_ids"] >= vocab_size)
+
+        # check language modeling labels are properly shifted one position
+        # to the right of input tokens
+        x, y = batch.values()
+        assert torch.allclose(x[:, 1:], y[:, :-1])
 
 
 class TestLMDataModules:
@@ -18,7 +40,7 @@ class TestLMDataModules:
 
     def test_wikitext_2(self):
         data_dir = os.getenv("DATA_DIR", current_dir.parent.parent / "data" / "nlp")
-        cache_dir = data_dir / "wikitext-2" / "cache"
+        cache_dir = data_dir / "wikitext2" / "cache"
         max_seq_len = 1024
         batch_size = 8
 
@@ -64,20 +86,13 @@ class TestLMDataModules:
             ((num_test_tokens-1) // max_seq_len) / batch_size
         )
 
-        # check a batch of data has the correct tensor shape
-        for loader in [train_dataloader, val_dataloader, test_dataloader]:
-            x, y = next(iter(loader))
-            assert x.dim() == 2     # (batch, seq_len,)
-            assert x.shape == (batch_size, max_seq_len)
-            assert x.dtype == torch.long
-            # check language modeling labels are properly shifted one position
-            # to the right of input tokens
-            assert torch.allclose(x[:, 1:], y[:, :-1])
+        for dataloader in [train_dataloader, val_dataloader, test_dataloader]:
+            check_dataloader(dataloader, batch_size, max_seq_len)
 
 
     def test_wikitext_103(self):
         data_dir = os.getenv("DATA_DIR", current_dir.parent.parent / "data" / "nlp")
-        cache_dir = data_dir / "wikitext-103" / "cache"
+        cache_dir = data_dir / "wikitext103" / "cache"
         max_seq_len = 1024
         batch_size = 8
 
@@ -115,15 +130,8 @@ class TestLMDataModules:
             ((num_test_tokens-1) // max_seq_len) / batch_size
         )
 
-        # check a batch of data has the correct tensor shape
-        for loader in [train_dataloader, val_dataloader, test_dataloader]:
-            x, y = next(iter(loader))
-            assert x.dim() == 2     # (batch, seq_len,)
-            assert x.shape == (batch_size, max_seq_len)
-            assert x.dtype == torch.long
-            # check language modeling labels are properly shifted one position
-            # to the right of input tokens
-            assert torch.allclose(x[:, 1:], y[:, :-1])
+        for dataloader in [train_dataloader, val_dataloader, test_dataloader]:
+            check_dataloader(dataloader, batch_size, max_seq_len)
 
 
     def test_openwebtext(self):
@@ -144,7 +152,7 @@ class TestLMDataModules:
             num_proc=4,
         )
 
-        # wikitext-2 stats
+        # openwebtext stats
         # obtained by print(len(concat_ids[split]))
         # note: openwebtext test split is dummy, so we don't use it
         num_train_tokens = 9035582198   # 9B
@@ -162,12 +170,5 @@ class TestLMDataModules:
             ((num_val_tokens-1) // max_seq_len) / batch_size
         )
 
-        # check a batch of data has the correct tensor shape
-        for loader in [train_dataloader, val_dataloader]:
-            x, y = next(iter(loader))
-            assert x.dim() == 2     # (batch, seq_len,)
-            assert x.shape == (batch_size, max_seq_len)
-            assert x.dtype == torch.long
-            # check language modeling labels are properly shifted one position
-            # to the right of input tokens
-            assert torch.allclose(x[:, 1:], y[:, :-1])
+        for dataloader in [train_dataloader, val_dataloader,]:
+            check_dataloader(dataloader, batch_size, max_seq_len)
