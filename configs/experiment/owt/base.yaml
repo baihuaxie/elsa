@@ -21,7 +21,7 @@ datamodule:
 
 trainer:
   accelerator: gpu
-  devices: 2
+  devices: 1
   num_nodes: 1
   #accumulate_grad_batches: ${ceil:${train.global_batch_size}, ${eval:${trainer.devices}*${trainer.num_nodes}*${datamodule.batch_size}}}
   accumulate_grad_batches: 4

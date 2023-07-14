@@ -1,5 +1,6 @@
 
 import hydra
+import torch
 from pytorch_lightning import LightningModule
 from torchmetrics import MetricCollection
 
@@ -95,7 +96,14 @@ class SequenceModel(LightningModule):
 
     def step(self, batch, batch_idx):
         # my model computes loss internally so `labels` are passed too
-        outputs = self.forward(batch)
+        try:
+            outputs = self.forward(batch)
+        except RuntimeError as e:
+            print(f"Error occurred in batch id: {batch_idx}")
+            print(f"Batch contents: {batch}")
+            torch.save(batch, f"error_batch_{batch_idx}.pt")
+            raise e
+
         labels = batch["labels"] if isinstance(batch, dict) else batch[1]
         if isinstance(outputs, dict):
             return outputs["loss"], outputs["logits"], labels

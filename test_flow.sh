@@ -10,7 +10,7 @@ EXPERIMENT="owt/gpt2s"
 PROJECT_NAME="elsa-develop"
 
 # specify run id
-RUN_ID="test-flow"
+RUN_ID="debug-A100-CUDA-assertion-error-03"
 
 # specify the path to the log directory
 BASE_DIR="./checkpoints"
@@ -18,7 +18,7 @@ LOG_DIR="${BASE_DIR}/${EXPERIMENT}/${RUN_ID}"
 mkdir -p $LOG_DIR
 
 # specify the maximum steps
-MAX_STEPS="10"
+MAX_STEPS="2000"
 
 # run the python script
-python $SCRIPT_NAME experiment=$EXPERIMENT trainer.max_steps=$MAX_STEPS loggers.wandb.project=$PROJECT_NAME loggers.wandb.id=$RUN_ID
+CUDA_LAUNCH_BLOCKING=1 python $SCRIPT_NAME experiment=$EXPERIMENT trainer.max_steps=$MAX_STEPS loggers.wandb.project=$PROJECT_NAME loggers.wandb.id=$RUN_ID

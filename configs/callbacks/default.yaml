@@ -41,11 +41,11 @@ flops_count:
   _target_: src.callbacks.flops_count.FlopsCounter
   profilers: ["estimate"]
 
-loss_scale_monitor:
-  _target_: src.callbacks.loss_scale_monitor.LossScaleMonitor
+#loss_scale_monitor:
+#  _target_: src.callbacks.loss_scale_monitor.LossScaleMonitor
 
-norm_monitor:
-  _target_: src.callbacks.norm_monitor.NormMonitor
+#norm_monitor:
+#  _target_: src.callbacks.norm_monitor.NormMonitor
 
 speed_monitor:
   _target_: src.callbacks.speed_monitor.SpeedMonitor
