@@ -184,8 +184,5 @@ class TestLMDataModules:
             ((num_val_tokens-1) // max_seq_len) / batch_size
         )
 
-        #for dataloader in [train_dataloader, val_dataloader,]:
-        #    check_dataloader(dataloader, batch_size, max_seq_len)
-
-        largest_element, smallest_element = get_largest_element(train_dataloader, idx=5945)
-        print(largest_element, smallest_element)
+        for dataloader in [train_dataloader, val_dataloader,]:
+            check_dataloader(dataloader, batch_size, max_seq_len)
