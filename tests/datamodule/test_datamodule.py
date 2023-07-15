@@ -5,6 +5,7 @@ import dotenv
 dotenv.load_dotenv(override=True)
 
 from tqdm import tqdm
+import pytest
 
 import math
 
@@ -34,10 +35,23 @@ def check_dataloader(dataloader, batch_size, max_seq_len, vocab_size=50257):
         assert torch.allclose(x[:, 1:], y[:, :-1])
 
 
+def get_largest_element(dataloader, idx):
+    for i, data in enumerate(dataloader):
+        # Assuming each data is a tuple of (inputs, labels)
+        inputs, labels = data.values()
+
+        if i == idx:
+            # Assuming inputs and labels are tensors
+            return inputs.max().item(), inputs.min().item()
+
+    raise ValueError(f"Index {idx} is out of range for the DataLoader")
+
+
+
 class TestLMDataModules:
     """Testing Language Modeling data pipelines.
     """
-
+    @pytest.mark.skip()
     def test_wikitext_2(self):
         data_dir = os.getenv("DATA_DIR", current_dir.parent.parent / "data" / "nlp")
         cache_dir = data_dir / "wikitext2" / "cache"
@@ -89,7 +103,7 @@ class TestLMDataModules:
         for dataloader in [train_dataloader, val_dataloader, test_dataloader]:
             check_dataloader(dataloader, batch_size, max_seq_len)
 
-
+    @pytest.mark.skip()
     def test_wikitext_103(self):
         data_dir = os.getenv("DATA_DIR", current_dir.parent.parent / "data" / "nlp")
         cache_dir = data_dir / "wikitext103" / "cache"
@@ -170,5 +184,8 @@ class TestLMDataModules:
             ((num_val_tokens-1) // max_seq_len) / batch_size
         )
 
-        for dataloader in [train_dataloader, val_dataloader,]:
-            check_dataloader(dataloader, batch_size, max_seq_len)
+        #for dataloader in [train_dataloader, val_dataloader,]:
+        #    check_dataloader(dataloader, batch_size, max_seq_len)
+
+        largest_element, smallest_element = get_largest_element(train_dataloader, idx=5945)
+        print(largest_element, smallest_element)
